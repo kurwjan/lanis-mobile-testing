@@ -127,8 +127,24 @@ class _HomePageState extends State<HomePage> {
         isSupported: true,
         enableBottomNavigation: false,
         enableDrawer: true,
-        action: (context) => launchUrl(
-            Uri.parse("https://mo${client.schoolID}.schulportal.hessen.de"))),
+        /*action: (context) => launchUrl(
+            Uri.parse("https://mo${client.schoolID}.schulportal.hessen.de"))),*/
+        action: (context) async {
+          //List<Cookie> results = await client.jar.loadForRequest(Uri.parse("https://start.schulportal.hessen.de"));
+
+          client.getLoginURL().then((response) {
+            launchUrl(
+                Uri.parse(response),
+                mode: LaunchMode.inAppWebView,
+                webViewConfiguration: WebViewConfiguration(
+                    headers: {
+                      "Set-Cookie": "SPH-Session=${client.sessionToken}; domain=.hessen.de; path=/; HttpOnly=1; SameSite=None; secure",
+                    }
+                )
+            );
+          });
+        }
+    ),
     Destination(
         label: (context) => AppLocalizations.of(context)!.settings,
         icon: const Icon(Icons.settings),

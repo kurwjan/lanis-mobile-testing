@@ -33,6 +33,8 @@ class SPHclient {
   String schoolID = "";
   String schoolName = "";
 
+  String sessionToken = ""; // Do not confuse this with the sid!
+
   Map<String, String> userData = {};
   List<dynamic> travelMenu = [];
   Timer? preventLogoutTimer;
@@ -244,6 +246,9 @@ class SPHclient {
             parse(response1.data).getElementById("authErrorLocktime");
 
         if (response1.headers.value(HttpHeaders.locationHeader) != null) {
+          final String setCookie = response1.headers.map["set-cookie"]![0];
+          sessionToken = setCookie.substring(setCookie.indexOf("=") + 1, setCookie.indexOf(";"));
+
           //credits are valid
           final response2 =
               await dioHttp.get("https://connect.schulportal.hessen.de");
