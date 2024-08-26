@@ -17,6 +17,7 @@ import 'package:sph_plan/view/timetable/stream.dart';
 import 'package:sph_plan/view/substitutions/stream.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:sph_plan/client/connection_checker.dart';
+import 'package:webview_flutter/webview_flutter.dart';
 
 class Destination {
   final Icon icon;
@@ -132,17 +133,33 @@ class _HomePageState extends State<HomePage> {
         action: (context) async {
           //List<Cookie> results = await client.jar.loadForRequest(Uri.parse("https://start.schulportal.hessen.de"));
 
-          client.getLoginURL().then((response) {
-            launchUrl(
-                Uri.parse(response),
-                mode: LaunchMode.inAppWebView,
-                webViewConfiguration: WebViewConfiguration(
-                    headers: {
-                      "Set-Cookie": "SPH-Session=${client.sessionToken}; domain=.hessen.de; path=/; HttpOnly=1; SameSite=None; secure",
-                    }
-                )
+          final sid = (await client.jar.loadForRequest(Uri.parse("https://start.schulportal.hessen.de")))[1].value;
+
+          WebViewCookieManager().setCookie(WebViewCookie(name: "SPH-Session", value: client.sessionToken, domain: ".hessen.de"));
+          WebViewCookieManager().setCookie(WebViewCookie(name: "sid", value: sid, domain: ".hessen.de"));
+          WebViewCookieManager().setCookie(WebViewCookie(name: "i", value: "6091", domain: ".hessen.de"));
+          final controller = WebViewController()
+            ..setJavaScriptMode(JavaScriptMode.unrestricted)
+            ..setNavigationDelegate(
+              NavigationDelegate(
+                onProgress: (int progress) {
+                },
+                onPageStarted: (String url) {},
+                onPageFinished: (String url) {},
+                onHttpError: (HttpResponseError error) {},
+                onWebResourceError: (WebResourceError error) {},
+                onNavigationRequest: (NavigationRequest request) {
+                  return NavigationDecision.navigate;
+                },
+              )
+            )
+            ..loadRequest(Uri.parse("https://mo${client.schoolID}.schulportal.hessen.de"));
+
+          Navigator.of(context).push(MaterialPageRoute(builder: (context) {
+            return Scaffold(
+              body: WebViewWidget(controller: controller,),
             );
-          });
+          }));
         }
     ),
     Destination(
